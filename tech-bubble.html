@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bubble Analysis: An Interactive Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The application is structured thematically to guide the user through the complex question of a potential AI bubble, rather than presenting raw, separate AI responses. The flow starts with a high-level Summary, moves to the core Bubble Debate, then dives into practical implications for Investment and the Job Market, and finally presents a speculative Timeline. This thematic structure, with a top navigation bar for quick access, was chosen because it directly answers the user's multi-faceted query in a logical, digestible sequence. Key interactions include toggling between "for" and "against" arguments, exploring company-specific data, and selecting timeframes to see how forecasts for risk and job impact evolve. This design prioritizes synthesis and user-driven exploration over simple data dumping, making the dense information from the source report more accessible and understandable. -->
+    <!-- Visualization & Content Choices: 
+        1. Bubble Characteristics: (Source: Arguments for/against a bubble) -> Goal: Organize & Compare -> Viz: Polar Area Chart -> Interaction: Hover tooltips provide detail on each factor (Valuation, Hype, Adoption, etc.). -> Justification: A polar area chart offers a compelling multi-variable snapshot of the bubble debate's key factors, superior to a simple list. -> Library: Chart.js.
+        2. Correction Risk Timeline: (Source: Forecasts for bubble pop) -> Goal: Show Change -> Viz: Bar Chart -> Interaction: Clicking a time-period bar updates an adjacent text panel with a detailed qualitative forecast. -> Justification: This connects a simple visual representation of risk over time with the necessary nuanced explanation, preventing misinterpretation. -> Library: Chart.js + Vanilla JS.
+        3. Job Market Impact: (Source: Job market predictions) -> Goal: Compare & Show Change -> Viz: Dual Bar Charts (Displacement vs. Transformation) -> Interaction: Timeframe buttons (6M, 1Y, 3Y) update both charts and a summary text block. -> Justification: Side-by-side charts effectively visualize the dual impact of AI on jobs, while the time selector directly addresses a core part of the user's question about the evolving landscape. -> Library: Chart.js + Vanilla JS.
+        4. Core Arguments & Company Info: (Source: All textual analysis) -> Goal: Inform & Organize -> Presentation: Interactive content panels revealed on click/toggle. -> Interaction: User clicks to switch views or reveal details. -> Justification: This keeps the UI clean and focused, allowing the user to progressively disclose information as they explore, which is less overwhelming than presenting all text at once. -> Library: Vanilla JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #38332E;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .active-nav {
+            color: #D97706;
+            font-weight: 600;
+        }
+        .nav-link {
+            transition: color 0.3s;
+        }
+        .nav-link:hover {
+            color: #D97706;
+        }
+        .active-btn {
+            background-color: #D97706 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .inactive-btn {
+            background-color: #EFEAE6;
+            color: #5A524C;
+        }
+        .inactive-btn:hover {
+            background-color: #E0D8D1;
+        }
+        .content-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EFEAE6;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200/80">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-amber-700">AI Market Analysis</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#summary" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Summary</a>
+                        <a href="#bubble-debate" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Bubble Debate</a>
+                        <a href="#investment" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Investment</a>
+                        <a href="#timeline" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Timeline</a>
+                        <a href="#jobs" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Job Market</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="max-w-4xl mx-auto space-y-16">
+
+            <section id="summary">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Are We in an AI Bubble?</h2>
+                    <p class="mt-4 text-lg text-gray-600">A synthesized analysis of the current AI landscape, integrating perspectives on market valuation, investment strategy, and the future of work.</p>
+                </div>
+                <div class="content-card p-6 md:p-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Executive Summary</h3>
+                    <p class="text-gray-700 space-y-4">
+                        The consensus indicates that while the AI sector exhibits strong characteristics of a speculative bubble—such as sky-high valuations, intense hype, and FOMO-driven investment—it is underpinned by more substantial technological advancement and real-world utility than the dot-com bubble of the late 1990s. The current environment is best described as a "sustained boom" with bubble-like features, rather than an empty bubble poised for an imminent, catastrophic collapse.
+                        <br><br>
+                        A significant market correction is considered likely, but its timing is uncertain, with estimates ranging from 6 months to 2 years. Key drivers for this correction include failing to meet inflated revenue expectations, rising interest rates, or geopolitical instability. For investors, the strategy should be cautious and long-term, focusing on companies with solid fundamentals and tangible products rather than pure hype. The impact on the job market is expected to be transformative, with short-term displacement in some roles but long-term creation of new jobs and a fundamental shift towards human-AI collaboration.
+                    </p>
+                </div>
+            </section>
+
+            <section id="bubble-debate">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">The Bubble Debate</h2>
+                    <p class="mt-4 text-lg text-gray-600">This section explores the arguments for a speculative bubble versus a sustained technological boom. The chart below visualizes key market indicators, while the buttons allow you to explore the synthesized arguments from both perspectives.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="content-card p-6">
+                         <div class="chart-container">
+                            <canvas id="bubbleCharacteristicsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-6">
+                        <div class="flex justify-center rounded-lg p-1.5 bg-gray-200/70" role="tablist">
+                            <button id="forBubbleBtn" type="button" class="w-full text-center px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 active-btn" role="tab">Arguments for a Bubble</button>
+                            <button id="againstBubbleBtn" type="button" class="w-full text-center px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 inactive-btn" role="tab">Arguments for a Boom</button>
+                        </div>
+                        <div id="bubbleDebateContent" class="content-card p-6 min-h-[300px]">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="investment">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Investment Landscape</h2>
+                    <p class="mt-4 text-lg text-gray-600">Navigating the high-stakes world of AI stocks requires balancing immense potential with significant risk. Explore the opportunities, risks, and specific company dynamics below.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="content-card p-6">
+                        <h3 class="flex items-center text-xl font-semibold text-green-700 mb-3">
+                            <span class="mr-2">📈</span> Opportunities
+                        </h3>
+                        <ul class="space-y-2 list-disc list-inside text-gray-700">
+                            <li><strong>Long-Term Growth:</strong> AI is a foundational technology shift, promising decades of growth. Investing in established leaders could yield substantial long-term returns.</li>
+                            <li><strong>Infrastructure Plays:</strong> Companies providing essential hardware (GPUs, servers) like Nvidia and AMD are direct beneficiaries of the AI arms race.</li>
+                            <li><strong>Productivity Revolution:</strong> AI's integration into enterprise software (e.g., Microsoft, Oracle) will unlock massive efficiency gains, driving software and cloud revenue.</li>
+                             <li><strong>Diversification:</strong> Beyond the big names, opportunities exist in specialized AI applications across healthcare, finance, and logistics.</li>
+                        </ul>
+                    </div>
+                     <div class="content-card p-6">
+                        <h3 class="flex items-center text-xl font-semibold text-red-700 mb-3">
+                           <span class="mr-2">⚠️</span> Risks
+                        </h3>
+                        <ul class="space-y-2 list-disc list-inside text-gray-700">
+                            <li><strong>Extreme Valuations:</strong> Many AI stocks are priced for perfection, making them vulnerable to sharp declines if growth targets are missed.</li>
+                            <li><strong>Concentration Risk:</strong> The market is heavily concentrated in a few "Magnificent Seven" stocks, creating systemic risk.</li>
+                            <li><strong>Hype-Driven Volatility:</strong> Stock prices are highly sensitive to news and narrative, leading to significant volatility.</li>
+                            <li><strong>Regulatory Scrutiny:</strong> Future government regulations on AI could stifle innovation and profitability.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-8 content-card p-6 md:p-8">
+                     <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">Company Spotlight: Valuations & Partnerships</h3>
+                     <p class="text-center text-gray-600 mb-6">Partnerships with leading AI labs like OpenAI have caused massive valuation spikes, but the nature of these deals warrants a closer look.</p>
+                     <div class="flex justify-center space-x-4">
+                        <button class="company-btn font-semibold py-2 px-4 rounded-lg transition-all duration-300 active-btn" data-company="oracle">Oracle</button>
+                        <button class="company-btn font-semibold py-2 px-4 rounded-lg transition-all duration-300 inactive-btn" data-company="amd">AMD</button>
+                     </div>
+                     <div id="companyDetail" class="mt-6 text-gray-700 p-4 bg-gray-50 rounded-lg">
+                     </div>
+                </div>
+            </section>
+            
+            <section id="timeline">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Correction Timeline & Probability</h2>
+                    <p class="mt-4 text-lg text-gray-600">While predicting the exact timing is impossible, this section synthesizes the probable risk of a significant market correction over various horizons. Click on a bar to see the detailed outlook for that period.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-3 content-card p-6">
+                        <div class="chart-container h-[400px]">
+                           <canvas id="correctionTimelineChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="timelineDetail" class="lg:col-span-2 content-card p-6 flex flex-col justify-center">
+                    </div>
+                </div>
+            </section>
+
+            <section id="jobs">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Impact on the Job Market</h2>
+                    <p class="mt-4 text-lg text-gray-600">AI is poised to be the most significant workforce transformation since the Industrial Revolution. Select a timeframe to see the projected impact on job displacement and creation.</p>
+                </div>
+                 <div class="flex justify-center rounded-lg p-1.5 bg-gray-200/70 mb-8 max-w-md mx-auto" role="tablist">
+                    <button class="job-timeline-btn w-full text-center px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 active-btn" data-timeline="6m">Next 6 Months</button>
+                    <button class="job-timeline-btn w-full text-center px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 inactive-btn" data-timeline="1y">Next 1 Year</button>
+                    <button class="job-timeline-btn w-full text-center px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 inactive-btn" data-timeline="3y">Next 3 Years</button>
+                </div>
+                <div id="jobMarketContent" class="space-y-8">
+                    <div class="content-card p-6 md:p-8">
+                        <h3 id="jobMarketTitle" class="text-xl font-semibold text-gray-800 mb-4">Outlook for the Next 6 Months</h3>
+                        <p id="jobMarketSummary" class="text-gray-700 mb-6"></p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div>
+                                <h4 class="font-semibold text-center text-red-600 mb-2">Areas of Potential Displacement</h4>
+                                <div class="chart-container h-64 md:h-72">
+                                    <canvas id="jobDisplacementChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-center text-green-600 mb-2">Areas of Growth & Transformation</h4>
+                                <div class="chart-container h-64 md:h-72">
+                                    <canvas id="jobCreationChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const data = {
+        bubbleDebate: {
+            forBubble: `
+                <h4 class="text-lg font-semibold mb-3 text-amber-800">Key Arguments for a Bubble</h4>
+                <ul class="space-y-3 list-disc list-inside text-gray-700">
+                    <li><strong>Astronomical Valuations:</strong> Companies with little to no revenue are achieving multi-billion dollar valuations, reminiscent of the dot-com era's "eyeballs over profits" mentality. P/E ratios for established players are at historic highs.</li>
+                    <li><strong>FOMO & Hype Cycle:</strong> Widespread media coverage and fear of missing out are driving speculative investments from both retail and institutional investors, often without due diligence.</li>
+                    <li><strong>Circular Investment:</strong> Large tech companies are investing in AI startups, who then use that money to buy cloud services from those same investors, inflating revenue figures and creating a fragile, interdependent ecosystem.</li>
+                    <li><strong>Unproven Profitability at Scale:</strong> While the technology is impressive, the path to widespread, sustainable profitability for many AI applications remains unclear. The immense cost of training and running large models is a major hurdle.</li>
+                </ul>
+            `,
+            againstBubble: `
+                 <h4 class="text-lg font-semibold mb-3 text-amber-800">Key Arguments for a Sustained Boom</h4>
+                <ul class="space-y-3 list-disc list-inside text-gray-700">
+                    <li><strong>Real-World Utility:</strong> Unlike many dot-com companies, AI is already delivering tangible productivity gains and enabling new products and services across various industries. This is a technological revolution, not just speculation.</li>
+                    <li><strong>Domination by Established Players:</strong> The boom is led by profitable tech giants (Microsoft, Google, Nvidia) with massive cash flows and existing infrastructure, providing a more stable foundation than the startup-driven dot-com bubble.</li>
+                    <li><strong>Massive R&D Investment:</strong> Unprecedented levels of investment are accelerating real technological breakthroughs, not just funding marketing campaigns.</li>
+                    <li><strong>Broad Economic Integration:</strong> AI is not a standalone sector; it's being integrated into every part of the economy, suggesting a long-term, foundational shift similar to the internet or electricity.</li>
+                </ul>
+            `
+        },
+        companyDetails: {
+            oracle: `
+                <h5 class="font-semibold text-lg mb-2">Oracle's AI Play</h5>
+                <p>Oracle's valuation has surged due to its significant cloud infrastructure contracts with OpenAI and other AI firms. The narrative is that Oracle's cloud is becoming a major player for high-performance computing. However, there are concerns about "circular selling." This involves Oracle investing in AI startups that then use the invested funds to pay for Oracle's cloud services. This can create an illusion of strong organic growth, making the company's AI-driven revenue appear larger and more stable than it might actually be. The long-term viability depends on attracting customers beyond those it has invested in.</p>
+            `,
+            amd: `
+                <h5 class="font-semibold text-lg mb-2">AMD's Challenge to Nvidia</h5>
+                <p>AMD's stock has risen on the promise of its MI300X accelerator becoming a viable competitor to Nvidia's dominant H100 GPUs. The company is securing partnerships and is seen as the primary alternative for companies seeking to diversify their AI hardware supply chain. The risk lies in execution and market adoption. While demand is high, AMD must prove its hardware and software ecosystem can compete with Nvidia's mature platform at scale. The valuation hinges on capturing a significant share of the AI accelerator market, a goal that is ambitious but not impossible.</p>
+            `,
+        },
+        timeline: {
+            '1 Month': {
+                risk: 1,
+                title: "Outlook: Next 1 Month",
+                detail: "The probability of a major correction is very low. Market momentum is exceptionally strong, driven by positive earnings from key AI players and ongoing product announcements. Volatility is expected, but a systemic pop is highly unlikely."
+            },
+            '3 Months': {
+                risk: 3,
+                title: "Outlook: Next 3 Months",
+                detail: "The risk level increases to low-to-moderate. The market will be closely watching for any signs of slowing growth in quarterly earnings reports. Any hint that revenue is not keeping pace with hype could trigger a minor sell-off, but a full-blown collapse remains improbable."
+            },
+            '6 Months': {
+                risk: 6,
+                title: "Outlook: Next 6 Months",
+                detail: "Risk becomes moderate to significant. By this point, the pressure for AI initiatives to show concrete, widespread ROI will be immense. If the promised productivity gains are not clearly materializing on a macro scale, investor sentiment could sour quickly, leading to a substantial correction (20-30%)."
+            },
+            '1 Year': {
+                risk: 8,
+                title: "Outlook: Next 1 Year",
+                detail: "The probability of a correction is high. A full year provides enough time for economic headwinds (inflation, interest rates) or geopolitical events to impact the market. Furthermore, if smaller AI companies begin to fail or the circular investment schemes unravel, it could trigger a broader loss of confidence in the sector's valuation."
+            }
+        },
+        jobMarket: {
+            '6m': {
+                title: 'Outlook for the Next 6 Months',
+                summary: "The immediate impact is a mix of targeted layoffs and intense hiring. Companies are eliminating roles with automatable tasks (data entry, basic customer service) while aggressively hiring for AI-specific positions (prompt engineers, AI ethics officers, model trainers). The net effect on overall employment is likely neutral to slightly negative as companies re-evaluate headcount in light of new AI tools.",
+                displacement: { labels: ['Content Creation (Basic)', 'Data Entry', 'Customer Support (Tier 1)', 'Recruiting (Sourcing)'], data: [5, 7, 6, 4] },
+                creation: { labels: ['AI/ML Engineering', 'Prompt Engineering', 'Data Annotation', 'AI Product Mgmt'], data: [8, 7, 6, 5] }
+            },
+            '1y': {
+                title: 'Outlook for the Next 1 Year',
+                summary: 'Productivity gains from AI will become more apparent, leading to more significant workforce restructuring. Job displacement will accelerate in administrative and analytical roles. However, growth will be strong in fields focused on AI implementation, strategy, and governance. The skills gap will become a major economic issue.',
+                displacement: { labels: ['Paralegal Work', 'Market Research Analysis', 'Copywriting', 'Web Dev (Basic)'], data: [7, 8, 6, 7] },
+                creation: { labels: ['AI Implementation Specialist', 'AI Ethics & Governance', 'Robotics Engineering', 'Cybersecurity (AI-focused)'], data: [9, 8, 7, 8] }
+            },
+            '3y': {
+                title: 'Outlook for the Next 3 Years',
+                summary: 'The job market will be fundamentally transformed. Many traditional white-collar jobs will be significantly altered, focusing on strategic oversight of AI systems. The economy will see the emergence of entirely new job categories we can barely imagine today. Lifelong learning and adaptability will become critical for career survival, and the debate over UBI and social safety nets will intensify.',
+                displacement: { labels: ['Financial Analysis (Routine)', 'Graphic Design (Standard)', 'Project Management', 'Software Testing'], data: [9, 8, 8, 9] },
+                creation: { labels: ['AI-Human Collaboration Manager', 'AI Business Strategist', 'Custom AI Model Trainer', 'Sentient AI Therapist (Speculative)'], data: [10, 9, 9, 7] }
+            }
+        }
+    };
+
+    const setupBubbleDebate = () => {
+        const forBubbleBtn = document.getElementById('forBubbleBtn');
+        const againstBubbleBtn = document.getElementById('againstBubbleBtn');
+        const contentDiv = document.getElementById('bubbleDebateContent');
+
+        const updateContent = (content) => {
+            contentDiv.innerHTML = content;
+        };
+
+        forBubbleBtn.addEventListener('click', () => {
+            updateContent(data.bubbleDebate.forBubble);
+            forBubbleBtn.classList.add('active-btn');
+            forBubbleBtn.classList.remove('inactive-btn');
+            againstBubbleBtn.classList.remove('active-btn');
+            againstBubbleBtn.classList.add('inactive-btn');
+        });
+
+        againstBubbleBtn.addEventListener('click', () => {
+            updateContent(data.bubbleDebate.againstBubble);
+            againstBubbleBtn.classList.add('active-btn');
+            againstBubbleBtn.classList.remove('inactive-btn');
+            forBubbleBtn.classList.remove('active-btn');
+            forBubbleBtn.classList.add('inactive-btn');
+        });
+        
+        updateContent(data.bubbleDebate.forBubble);
+    };
+
+    const setupCompanySpotlight = () => {
+        const buttons = document.querySelectorAll('.company-btn');
+        const detailDiv = document.getElementById('companyDetail');
+
+        const updateContent = (company) => {
+            detailDiv.innerHTML = data.companyDetails[company];
+        };
+        
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                buttons.forEach(btn => {
+                    btn.classList.remove('active-btn');
+                    btn.classList.add('inactive-btn');
+                });
+                button.classList.add('active-btn');
+                button.classList.remove('inactive-btn');
+                updateContent(button.dataset.company);
+            });
+        });
+
+        updateContent('oracle');
+    };
+
+    const setupTimeline = () => {
+        const detailDiv = document.getElementById('timelineDetail');
+        const timelineData = data.timeline;
+
+        const updateContent = (period) => {
+            const item = timelineData[period];
+            detailDiv.innerHTML = `
+                <h4 class="text-lg font-semibold mb-3 text-amber-800">${item.title}</h4>
+                <p class="text-gray-700">${item.detail}</p>
+            `;
+        };
+        
+        updateContent('6 Months');
+        return updateContent;
+    };
+    
+    let jobDisplacementChart, jobCreationChart;
+
+    const setupJobMarket = () => {
+        const buttons = document.querySelectorAll('.job-timeline-btn');
+        const titleEl = document.getElementById('jobMarketTitle');
+        const summaryEl = document.getElementById('jobMarketSummary');
+
+        const displacementCtx = document.getElementById('jobDisplacementChart').getContext('2d');
+        const creationCtx = document.getElementById('jobCreationChart').getContext('2d');
+
+        const chartOptions = {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 10,
+                    grid: { drawOnChartArea: false }
+                },
+                 y: {
+                     grid: { display: false }
+                }
+            }
+        };
+
+        jobDisplacementChart = new Chart(displacementCtx, {
+            type: 'bar',
+            data: {},
+            options: { ...chartOptions, plugins: {...chartOptions.plugins, tooltip: {backgroundColor: 'rgba(220, 38, 38, 0.8)'} }, scales: {...chartOptions.scales, x: {...chartOptions.scales.x, suggestedMax: 10}}}
+        });
+
+        jobCreationChart = new Chart(creationCtx, {
+            type: 'bar',
+            data: {},
+            options: { ...chartOptions, plugins: {...chartOptions.plugins, tooltip: {backgroundColor: 'rgba(5, 150, 105, 0.8)'} }, scales: {...chartOptions.scales, x: {...chartOptions.scales.x, suggestedMax: 10}} }
+        });
+        
+        const updateContent = (timelineKey) => {
+            const timelineData = data.jobMarket[timelineKey];
+            titleEl.textContent = timelineData.title;
+            summaryEl.textContent = timelineData.summary;
+
+            jobDisplacementChart.data = {
+                labels: timelineData.displacement.labels,
+                datasets: [{
+                    label: 'Displacement Impact',
+                    data: timelineData.displacement.data,
+                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                    borderColor: 'rgba(220, 38, 38, 1)',
+                    borderWidth: 1
+                }]
+            };
+            jobDisplacementChart.update();
+
+            jobCreationChart.data = {
+                labels: timelineData.creation.labels,
+                datasets: [{
+                    label: 'Creation/Growth Impact',
+                    data: timelineData.creation.data,
+                    backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                    borderColor: 'rgba(5, 150, 105, 1)',
+                    borderWidth: 1
+                }]
+            };
+            jobCreationChart.update();
+        };
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                buttons.forEach(btn => {
+                    btn.classList.remove('active-btn');
+                    btn.classList.add('inactive-btn');
+                });
+                button.classList.add('active-btn');
+                button.classList.remove('inactive-btn');
+                updateContent(button.dataset.timeline);
+            });
+        });
+
+        updateContent('6m');
+    };
+    
+    const createBubbleCharacteristicsChart = () => {
+        const ctx = document.getElementById('bubbleCharacteristicsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'polarArea',
+            data: {
+                labels: ['Valuation', 'Market Hype', 'Real Adoption', 'Profitability', 'Infrastructure Foundation'],
+                datasets: [{
+                    label: 'Bubble Characteristics',
+                    data: [9, 8, 6, 4, 7],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(153, 102, 255, 0.5)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                         callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.r !== null) {
+                                    label += context.parsed.r + ' / 10';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scale: {
+                    ticks: {
+                        beginAtZero: true,
+                        max: 10,
+                        stepSize: 2
+                    }
+                }
+            }
+        });
+    };
+
+    const createCorrectionTimelineChart = (updateCallback) => {
+        const ctx = document.getElementById('correctionTimelineChart').getContext('2d');
+        const timelineData = data.timeline;
+        const labels = Object.keys(timelineData);
+        const riskData = labels.map(key => timelineData[key].risk);
+
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Correction Risk Level (out of 10)',
+                    data: riskData,
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(255, 159, 64, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        title: {
+                            display: true,
+                            text: 'Risk Level'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                onClick: (event) => {
+                    const points = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+                    if (points.length) {
+                        const firstPoint = points[0];
+                        const label = chart.data.labels[firstPoint.index];
+                        updateCallback(label);
+                    }
+                }
+            }
+        });
+    };
+
+    setupBubbleDebate();
+    setupCompanySpotlight();
+    const timelineUpdateCallback = setupTimeline();
+    setupJobMarket();
+    createBubbleCharacteristicsChart();
+    createCorrectionTimelineChart(timelineUpdateCallback);
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section');
+
+    const activateNavLink = () => {
+        let index = sections.length;
+        while(--index && window.scrollY + 100 < sections[index].offsetTop) {}
+        
+        navLinks.forEach((link) => link.classList.remove('active-nav'));
+        const activeLink = document.querySelector(`.nav-link[href="#${sections[index].id}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active-nav');
+        }
+    };
+
+    window.addEventListener('scroll', activateNavLink);
+    activateNavLink();
+});
+</script>
+</body>
+</html>
